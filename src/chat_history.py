@@ -21,6 +21,41 @@ from datetime import datetime
 from typing import List, Optional
 
 
+class SafeJSONEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder that safely handles non-serializable objects.
+    Converts them to string representation instead of crashing.
+    """
+
+    def default(self, obj):
+        # Handle numpy types from cross encoder scores
+        try:
+            import numpy as np
+
+            if isinstance(obj, np.floating):
+                return float(obj)
+            if isinstance(obj, np.integer):
+                return int(obj)
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+        except ImportError:
+            pass
+
+        # Handle LangChain Document objects — extract text only
+        if hasattr(obj, "page_content"):
+            return {
+                "page_content": obj.page_content[:300],
+                "source_file": obj.metadata.get("source_file", "unknown"),
+                "page": obj.metadata.get("page", 0),
+            }
+
+        # Fallback — convert anything else to string
+        try:
+            return str(obj)
+        except Exception:
+            return "[non-serializable]"
+
+
 # Folder where all session files are saved
 SESSIONS_DIR = "chat_sessions"
 
@@ -71,7 +106,7 @@ def save_session(session: dict):
     ensure_sessions_dir()
     path = get_session_path(session["session_id"])
     with open(path, "w") as f:
-        json.dump(session, f, indent=2)
+        json.dump(session, f, indent=2, cls=SafeJSONEncoder)
 
 
 def load_session(session_id: str) -> Optional[dict]:

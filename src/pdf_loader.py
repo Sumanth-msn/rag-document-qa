@@ -9,12 +9,12 @@ so we always know WHERE each answer came from.
 Interview explanation:
 "I used PyPDFLoader to extract text page by page, then
 RecursiveCharacterTextSplitter to break it into 500-character chunks
-with 100-character overlap. Each chunk is tagged with its source filename
+with 50-character overlap. Each chunk is tagged with its source filename
 and page number so the UI can show exactly where the answer came from."
 """
 
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 import tempfile
 import os
@@ -37,7 +37,7 @@ def load_and_chunk_pdfs(uploaded_files: list) -> List[Document]:
     # chunk_overlap=50: 50 chars shared between consecutive chunks
     #                   this prevents losing context at chunk boundaries
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500, chunk_overlap=100, separators=["\n\n", "\n", ".", "!", "?", " "]
+        chunk_size=800, chunk_overlap=150, separators=["\n\n", "\n", ".", "!", "?", " "]
     )
 
     all_chunks = []

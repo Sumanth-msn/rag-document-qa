@@ -12,7 +12,7 @@ from src.vectorstore import (
     score_to_percentage,
     get_retriever,
 )
-from src.rag_chain import build_rag_chain, ask_question
+from src.rag_chain import build_rag_chain, ask_question, answer_with_reranked_docs
 from src.chat_history import (
     create_new_session,
     save_session,
@@ -24,6 +24,7 @@ from src.chat_history import (
     group_sessions_by_date,
 )
 from src.question_suggester import generate_suggested_questions
+from src.reranker import rerank_documents
 
 st.set_page_config(
     page_title="DocMind — RAG Q&A",
@@ -107,6 +108,7 @@ for key, default in {
     "vectorstore": None,
     "chunks": None,
     "rag_chain": None,
+    "retriever": None,
     "chat_history": [],
     "doc_summary": None,
     "current_session": None,
@@ -144,7 +146,8 @@ with st.sidebar:
                 st.session_state.vectorstore = vectorstore
 
             with st.spinner("🔗 Building Hybrid RAG chain..."):
-                retriever = get_retriever(vectorstore, chunks, k=5)
+                retriever = get_retriever(vectorstore, chunks, k=10)
+                st.session_state.retriever = retriever
                 st.session_state.rag_chain = build_rag_chain(retriever)
 
             doc_names = [f.name for f in uploaded_files]
@@ -175,7 +178,7 @@ with st.sidebar:
             st.session_state.chat_history = []
             if st.session_state.vectorstore and st.session_state.chunks:
                 retriever = get_retriever(
-                    st.session_state.vectorstore, st.session_state.chunks, k=5
+                    st.session_state.vectorstore, st.session_state.chunks, k=10
                 )
                 st.session_state.rag_chain = build_rag_chain(retriever)
             if st.session_state.doc_summary:
@@ -301,9 +304,29 @@ if not docs_ready:
 # ─────────────────────────────────────────
 
 if ask_btn and question.strip() and docs_ready:
-    with st.spinner("Searching documents and generating answer..."):
+    with st.spinner("Searching documents..."):
         start = time.time()
-        result = ask_question(st.session_state.rag_chain, question)
+
+        # Step 1: Hybrid retrieval — get top 10 candidates
+        from langchain_core.documents import Document
+
+        hybrid_docs = st.session_state.retriever.invoke(question)
+
+    with st.spinner("Re-ranking results with Cross Encoder..."):
+        # Step 2: Re-rank candidates with cross encoder
+        scored_reranked = rerank_documents(question, hybrid_docs, top_n=5)
+        reranked_docs = [doc for doc, _ in scored_reranked]
+        top_rerank_score = (
+            round(float(scored_reranked[0][1]), 3) if scored_reranked else 0
+        )
+
+    with st.spinner("Generating answer..."):
+        # Step 3: Generate answer using re-ranked docs
+        result = answer_with_reranked_docs(
+            question, reranked_docs, st.session_state.chat_history
+        )
+
+        # Confidence from FAISS for display
         scored_docs = retrieve_with_scores(st.session_state.vectorstore, question, k=5)
         top_score = score_to_percentage(scored_docs[0][1]) if scored_docs else 0
         elapsed = round(time.time() - start, 2)
@@ -316,8 +339,10 @@ if ask_btn and question.strip() and docs_ready:
 
     new_message = {
         "question": question,
+        "rewritten_query": None,
         "answer": result["answer"],
         "confidence": top_score,
+        "rerank_score": top_rerank_score,
         "source_documents": result["source_documents"],
         "source_labels": source_labels,
         "elapsed": elapsed,
@@ -327,12 +352,15 @@ if ask_btn and question.strip() and docs_ready:
 
     # Persist to JSON — only store serializable fields, not Document objects
     if st.session_state.current_session:
+        rerank_score = new_message.get("rerank_score")
         saveable = {
             "question": new_message["question"],
+            "rewritten_query": new_message.get("rewritten_query"),
             "answer": new_message["answer"],
-            "confidence": new_message["confidence"],
-            "source_labels": new_message["source_labels"],
-            "elapsed": new_message["elapsed"],
+            "confidence": int(new_message["confidence"]),
+            "rerank_score": float(rerank_score) if rerank_score is not None else None,
+            "source_labels": [str(s) for s in new_message["source_labels"]],
+            "elapsed": float(new_message["elapsed"]),
         }
         st.session_state.current_session = add_message_to_session(
             st.session_state.current_session, saveable
@@ -360,10 +388,22 @@ if st.session_state.chat_history:
         st.markdown(
             f"<div class='user-bubble'>{turn['question']}</div>", unsafe_allow_html=True
         )
+
+        # Show rewritten query if it changed
+        rewritten = turn.get("rewritten_query")
+        if rewritten:
+            st.markdown(
+                f"<div style='color:#4a4a6a; font-size:0.72rem; font-family:monospace; margin:0.2rem 0 0.4rem 0'>"
+                f"🔄 Searched as: {rewritten}</div>",
+                unsafe_allow_html=True,
+            )
+
+        rerank = turn.get("rerank_score")
+        rerank_display = f" · rerank: {rerank}" if rerank else ""
         st.markdown(
             f"<span class='conf-badge {conf_class}'>{conf_label}</span>"
             f"<span style='color:#3a3a5a; font-size:0.7rem; font-family:monospace;'>"
-            f" · {turn.get('elapsed', '')}s{ts_display}</span>",
+            f" · {turn.get('elapsed', '')}s{rerank_display}{ts_display}</span>",
             unsafe_allow_html=True,
         )
         st.markdown("<div class='label-ai'>DocMind</div>", unsafe_allow_html=True)
