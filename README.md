@@ -1,7 +1,6 @@
 # 📚 DocMind — RAG Document Q&A System
 
-A production-quality RAG (Retrieval-Augmented Generation) system
-that lets you upload multiple PDFs and have a conversation with them.
+DocMind is a multi-document RAG system that lets users upload PDFs and get precise, grounded answers instantly, instead of manually searching through hundreds of pages.
 
 ---
 
@@ -13,6 +12,14 @@ that lets you upload multiple PDFs and have a conversation with them.
 | **Conversational Memory** | Remembers last 5 Q&A turns for follow-up questions |
 | **Source Highlighting** | Shows exactly which page and paragraph each answer came from |
 | **Confidence Score** | Displays FAISS similarity score as answer confidence % |
+
+---
+
+## 💡 Problems it is designed to solve:
+- Enterprises with messy scattered internal docs — policies, manuals, reports — need one searchable knowledge base
+- Regulated industries like finance and legal need auditable, source-cited AI outputs
+- Companies that can't share sensitive data with public LLMs — everything runs locally with open-source models
+- Organisations whose data changes frequently — RAG always answers from the latest uploaded documents, not stale training data
 
 ---
 
