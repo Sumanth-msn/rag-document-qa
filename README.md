@@ -5,7 +5,6 @@ DocMind is a multi-document RAG system that lets users upload PDFs and get preci
 ---
 
 ## ✨ Features
-## ✨ Features
 
 | Feature | What it does |
 |---|---|
