@@ -4,6 +4,14 @@ DocMind is a multi-document RAG system that lets users upload PDFs and get preci
 
 ---
 
+## 💡 Problems it is designed to solve:
+- Enterprises with messy scattered internal docs — policies, manuals, reports — need one searchable knowledge base
+- Regulated industries like finance and legal need auditable, source-cited AI outputs
+- Companies that can't share sensitive data with public LLMs — everything runs locally with open-source models
+- Organisations whose data changes frequently — RAG always answers from the latest uploaded documents, not stale training data
+
+---
+
 ## ✨ Features
 
 | Feature | What it does |
@@ -19,14 +27,6 @@ DocMind is a multi-document RAG system that lets users upload PDFs and get preci
 | **Smart Question Suggestions** | Auto-generates 4 relevant questions from document content after upload |
 | **Anti-repetition Prompt** | Engineered prompt with temperature=0.5 eliminates generic closing statements |
 | **RAGAS Evaluation Tab** | On-demand system quality scoring — faithfulness, answer relevancy, context precision, context recall |
-
----
-
-## 💡 Problems it is designed to solve:
-- Enterprises with messy scattered internal docs — policies, manuals, reports — need one searchable knowledge base
-- Regulated industries like finance and legal need auditable, source-cited AI outputs
-- Companies that can't share sensitive data with public LLMs — everything runs locally with open-source models
-- Organisations whose data changes frequently — RAG always answers from the latest uploaded documents, not stale training data
 
 ---
 
