@@ -5,13 +5,21 @@ DocMind is a multi-document RAG system that lets users upload PDFs and get preci
 ---
 
 ## ✨ Features
+## ✨ Features
 
 | Feature | What it does |
-|---------|-------------|
-| **Multi-PDF Support** | Upload and query across multiple documents at once |
-| **Conversational Memory** | Remembers last 5 Q&A turns for follow-up questions |
-| **Source Highlighting** | Shows exactly which page and paragraph each answer came from |
-| **Confidence Score** | Displays FAISS similarity score as answer confidence % |
+|---|---|
+| **Multi-PDF Support** | Upload and query across multiple documents simultaneously with cross-document retrieval |
+| **Hybrid Search (FAISS MMR + BM25)** | Combines semantic vector search and keyword search (60/40) for superior retrieval accuracy |
+| **Cross-Encoder Re-ranking** | Re-scores top 10 candidates by reading question + chunk together — same approach as Cohere Rerank |
+| **Conversational Memory** | Remembers last 5 Q&A turns for context-aware follow-up questions |
+| **Source Highlighting** | Shows exact filename, page number, and keyword-highlighted paragraph each answer came from |
+| **Confidence Score** | Displays FAISS cosine similarity as answer confidence % per query |
+| **Rerank Score** | Shows cross-encoder relevance score alongside confidence for dual-layer quality signal |
+| **Chat History Persistence** | Saves all conversations as JSON sessions with timestamps — survives browser refresh |
+| **Smart Question Suggestions** | Auto-generates 4 relevant questions from document content after upload |
+| **Anti-repetition Prompt** | Engineered prompt with temperature=0.5 eliminates generic closing statements |
+| **RAGAS Evaluation Tab** | On-demand system quality scoring — faithfulness, answer relevancy, context precision, context recall |
 
 ---
 
